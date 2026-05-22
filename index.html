@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>TCM Premium Admin | Enterprise Core</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&family=Space+Grotesk:wght@500;700&display=swap');
+
+        :root {
+            --bg-base: #f0f4f8; --glass-panel: rgba(255, 255, 255, 0.65); --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: rgba(0, 0, 0, 0.05); --text-main: #0f172a; --text-sub: #64748b;
+            --primary: #00bcd4; --accent: #6366f1; --success: #10b981; --error: #f43f5e; --warning: #f59e0b;
+            --orb-1: rgba(0, 188, 212, 0.2); --orb-2: rgba(99, 102, 241, 0.2);
+        }
+
+        [data-theme="dark"] {
+            --bg-base: #030712; --glass-panel: rgba(15, 23, 42, 0.5); --glass-border: rgba(0, 245, 255, 0.15); 
+            --glass-shadow: rgba(0, 0, 0, 0.5); --text-main: #f8fafc; --text-sub: #94a3b8;
+            --primary: #00f5ff; --accent: #a855f7; --success: #00e676; --error: #ff1744; --warning: #ffb703;
+            --orb-1: rgba(0, 245, 255, 0.15); --orb-2: rgba(168, 85, 247, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background: var(--bg-base); color: var(--text-main); min-height: 100vh; display: flex; overflow-x: hidden; transition: background 0.5s ease; -ms-overflow-style: none; scrollbar-width: none; }
+        ::-webkit-scrollbar { display: none; }
+        
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; font-size: 16px !important; outline: none; }
+        input, select, textarea { font-size: 16px !important; outline: none; }
+
+        .bg-orbs { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); animation: floatOrb 10s infinite alternate ease-in-out; }
+        .orb-1 { width: 400px; height: 400px; background: var(--orb-1); top: -100px; left: -100px; }
+        .orb-2 { width: 500px; height: 500px; background: var(--orb-2); bottom: -150px; right: -100px; animation-delay: -5s; }
+        @keyframes floatOrb { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.1); } }
+        @keyframes spinFast { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .sidebar { width: 280px; height: 100vh; background: var(--glass-panel); backdrop-filter: blur(25px); border-right: 1px solid var(--glass-border); padding: 25px 20px; display: flex; flex-direction: column; z-index: 1000; box-shadow: 5px 0 30px var(--glass-shadow); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: fixed; left: 0; top: 0; overflow-y: auto;}
+        .sidebar::-webkit-scrollbar { display: none; }
+        .brand { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; color: var(--text-main); font-weight: 700; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px;}
+        .brand span i { color: var(--primary); text-shadow: 0 0 10px var(--primary); margin-right: 8px; }
+        .close-sidebar { display: none; color: var(--text-sub); font-size: 1.3rem; cursor: pointer; transition: 0.3s; }
+        
+        .sb-search { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 14px; padding: 12px 15px; display: flex; align-items: center; gap: 10px; margin-bottom: 25px; transition: 0.3s;}
+        .sb-search input { background: transparent; border: none; color: var(--text-main); width: 100%; font-size: 0.9rem; }
+        
+        .nav-item { display: flex; align-items: center; gap: 15px; padding: 14px 18px; color: var(--text-sub); text-decoration: none; border-radius: 14px; transition: all 0.3s; margin-bottom: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; position: relative; overflow: hidden; }
+        .nav-item:hover, .nav-item.active { color: var(--primary); border-left: 3px solid var(--primary); transform: translateX(5px); }
+
+        .notes-box { background: rgba(0,0,0,0.1); border: 1px dashed var(--glass-border); border-radius: 16px; padding: 15px; margin-top: 20px; flex: 1; display: flex; flex-direction: column; min-height: 150px; }
+        .notes-box h4 { font-size: 0.85rem; color: var(--text-main); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .notes-area { background: transparent; border: none; color: var(--text-main); resize: none; width: 100%; height: 100%; font-size: 0.85rem; line-height: 1.5; }
+
+        .sb-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 900; display: none; opacity: 0; transition: 0.3s; }
+
+        .main-content { margin-left: 280px; flex: 1; padding: 30px 40px; min-height: 100vh; z-index: 10; position: relative; display: block; transition: margin 0.4s ease; width: calc(100% - 280px); }
+        .view-section { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; gap: 15px; flex-wrap: wrap; }
+        .page-title-box { display: flex; align-items: center; gap: 15px; }
+        .mobile-nav-toggle { display: none; font-size: 1.8rem; color: var(--text-main); cursor: pointer; transition: 0.3s; }
+        .page-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--text-main); }
+        
+        .admin-profile { display: flex; align-items: center; gap: 15px; background: var(--glass-panel); padding: 8px 18px 8px 12px; border-radius: 30px; border: 1px solid var(--glass-border); box-shadow: 0 5px 15px var(--glass-shadow); backdrop-filter: blur(10px); }
+        .admin-profile img { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--primary); padding: 2px; }
+        .system-clock { font-size: 0.85rem; font-family: monospace; color: var(--text-sub); text-align: right; margin-top: 4px; font-weight: 600;}
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .stat-card { background: var(--glass-panel); border: 1px solid var(--glass-border); border-radius: 24px; padding: 25px; backdrop-filter: blur(20px); position: relative; overflow: hidden; box-shadow: 0 10px 30px var(--glass-shadow); }
+        .stat-card i.bg-icon { position: absolute; right: -10px; bottom: -15px; font-size: 6.5rem; opacity: 0.08; color: var(--text-main); pointer-events: none;}
+        .stat-title { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--text-main); font-family: 'Space Grotesk', sans-serif;}
+
+        .chart-container { background: var(--glass-panel); border: 1px solid var(--glass-border); border-radius: 24px; padding: 25px; backdrop-filter: blur(20px); margin-bottom: 35px; width: 100%; height: 350px;}
+
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(244, 63, 94, 0.4); transition: .4s; border-radius: 34px; border: 1px solid var(--error); }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        input:checked + .slider { background-color: rgba(16, 185, 129, 0.4); border-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .bulk-action-bar { background: linear-gradient(90deg, var(--orb-1), transparent); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px 25px; margin-bottom: 35px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(15px); flex-wrap: wrap; gap: 15px;}
+        .bulk-text { font-size: 1.1rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 15px; flex: 1;}
+        .bulk-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-bulk { padding: 12px 20px; border: none; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; text-transform: uppercase; white-space: nowrap;}
+        .btn-bulk-approve { background: var(--success); color: #000; box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3); }
+        .btn-bulk-reject { background: var(--error); color: #fff; box-shadow: 0 5px 15px rgba(244, 63, 94, 0.3); }
+
+        .table-container { background: var(--glass-panel); border: 1px solid var(--glass-border); border-radius: 24px; padding: 25px; backdrop-filter: blur(20px); position: relative; margin-bottom: 25px;}
+        .table-wrapper { width: 100%; overflow-x: auto; padding-bottom: 10px; border-radius: 16px;} 
+        table { width: 100%; min-width: 950px; border-collapse: separate; border-spacing: 0 8px; text-align: left; }
+        th { padding: 0 15px 15px 15px; color: var(--text-sub); font-size: 0.8rem; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.05); white-space: nowrap; }
+        td { padding: 15px 15px; background: rgba(0,0,0,0.15); font-size: 0.95rem; font-weight: 500; color: var(--text-main); white-space: nowrap; vertical-align: middle;}
+        tr td:first-child { border-radius: 16px 0 0 16px; border-left: 2px solid transparent; }
+        tr td:last-child { border-radius: 0 16px 16px 0; }
+        
+        .badge { padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        .badge.dep { background: rgba(0, 245, 255, 0.15); color: var(--primary); border: 1px solid rgba(0, 245, 255, 0.3); }
+        .badge.wd { background: rgba(168, 85, 247, 0.15); color: var(--accent); border: 1px solid rgba(168, 85, 247, 0.3); }
+        .badge.air { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); } 
+        .badge.active-user { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge.banned-user { background: rgba(244, 63, 94, 0.15); color: var(--error); border: 1px solid rgba(244, 63, 94, 0.3); }
+        .badge.locked-tx { background: rgba(192, 38, 211, 0.15); color: #c026d3; border: 1px solid #c026d3; }
+
+        .order-id-tag { font-family: monospace; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 8px; border: 1px dashed var(--glass-border); color: var(--text-sub); font-size: 0.8rem; letter-spacing: 0.5px;}
+
+        .user-info-box { display: flex; align-items: center; gap: 15px; }
+        .user-info-box img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--glass-border); object-fit: cover;}
+        .user-name { font-weight: 700; color: var(--text-main); font-size: 1.05rem; }
+        .user-uid { font-size: 0.8rem; color: var(--primary); font-family: monospace; margin-top: 2px;}
+        .wallet-info { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; }
+        
+        .debt-alert { color: var(--error); font-size: 0.8rem; font-weight: 700; margin-top: 5px; display: inline-block; background: rgba(244, 63, 94, 0.1); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(244, 63, 94, 0.3); }
+        
+        .action-btns { display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: nowrap;}
+        .btn-sm { padding: 10px 16px; border: none; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;}
+        
+        .btn-app { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid transparent; }
+        .btn-rej { background: rgba(244, 63, 94, 0.15); color: var(--error); border: 1px solid transparent; }
+        .btn-vault-lock { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid transparent;}
+        .btn-ban { background: rgba(244, 63, 94, 0.1); color: var(--error); border: 1px solid var(--error); }
+        .btn-unban { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid var(--success); }
+        .btn-vault { background: rgba(0, 245, 255, 0.1); color: var(--primary); border: 1px solid var(--primary); }
+        .btn-rev { background: rgba(168, 85, 247, 0.15); color: var(--accent); border: 1px solid transparent; }
+        .btn-del { background: transparent; color: var(--text-sub); border: 1px solid transparent; font-size: 1.2rem; padding: 8px 12px; cursor: pointer;}
+        
+        .vault-control-card { background: var(--glass-panel); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 24px; padding: 30px; backdrop-filter: blur(20px); margin-bottom: 25px;}
+        .ad-input-group label { display: block; font-size: 0.9rem; color: var(--text-sub); margin-bottom: 8px; font-weight: 600; }
+        .ad-input { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; padding: 15px; color: var(--text-main); font-size: 1rem; margin-bottom: 15px;}
+        .ad-btn { width: 100%; background: var(--primary); color: #000; border: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: auto;}
+        
+        .level-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
+        .lvl-box { background: rgba(0,0,0,0.1); border: 1px solid var(--glass-border); padding: 15px; border-radius: 14px; text-align: center; }
+        .lvl-box label { font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-bottom: 8px; display: block; }
+        .lvl-box input { width: 100%; background: transparent; border: none; border-bottom: 1px dashed var(--text-sub); color: var(--text-main); text-align: center; font-size: 1.2rem; font-weight: 700; padding-bottom: 5px;}
+        
+        .custom-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity 0.3s; }
+        .custom-modal-overlay.show { opacity: 1; }
+        .custom-modal-box { background: var(--glass-panel); width: 100%; max-width: 400px; border-radius: 24px; padding: 40px 30px; text-align: center; border: 1px solid var(--glass-border); box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(25px); }
+        .modal-icon { font-size: 4.5rem; color: var(--warning); margin-bottom: 20px; }
+        .modal-actions { display: flex; gap: 15px; justify-content: center; margin-top: 20px;}
+        .btn-modal { flex: 1; padding: 15px; border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer; border: none;}
+        .btn-modal-cancel { background: rgba(0,0,0,0.3); color: var(--text-main); border: 1px solid var(--glass-border); }
+        .btn-modal-ok { background: var(--primary); color: #000; }
+
+        #toast { visibility: hidden; min-width: 250px; background: var(--glass-panel); backdrop-filter: blur(15px); border: 1px solid var(--primary); color: var(--text-main); text-align: center; border-radius: 14px; padding: 16px 25px; position: fixed; z-index: 10000; right: 30px; bottom: 30px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.5); opacity: 0; transition: 0.5s; transform: translateY(20px); }
+        #toast.show { visibility: visible; opacity: 1; transform: translateY(0); }
+        .loader-spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spinFast 0.8s linear infinite; margin: 30px auto; }
+
+        @media (max-width: 1200px) { .stats-grid, .level-grid { grid-template-columns: repeat(3, 1fr); } .main-content { padding: 25px; } }
+        @media (max-width: 992px) { .sidebar { left: -100%; } .sidebar.active { left: 0; } .main-content { margin-left: 0; width: 100%; padding: 20px; } .mobile-nav-toggle, .close-sidebar { display: block; } }
+        @media (max-width: 768px) { .stats-grid, .level-grid { grid-template-columns: repeat(2, 1fr); } .top-bar { flex-direction: column; align-items: flex-start; } .admin-profile { width: 100%; justify-content: space-between; margin-top: 10px; } .bulk-action-bar { flex-direction: column; align-items: flex-start; padding: 15px; } .bulk-text { min-width: 100%; margin-bottom: 10px;} .btn-bulk { width: 100%; flex: 100%; justify-content: center; padding: 14px;} .bulk-btns { width: 100%; display: grid; grid-template-columns: 1fr 1fr;} }
+    </style>
+</head>
+<body>
+    
+    <div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div></div>
+    <div class="sb-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="brand"><span><i class="fas fa-cube"></i> TCM Core</span><i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i></div>
+        <div class="sb-search"><i class="fas fa-search" style="color: var(--text-sub);"></i><input type="text" id="sidebarSearch" placeholder="Find UID..." oninput="searchUserFromSidebar()"></div>
+
+        <a class="nav-item active" id="navDashboard" onclick="switchView('dashboard')"><i class="fas fa-layer-group"></i> Command Center</a>
+        <a class="nav-item" id="navDeposit" onclick="switchView('deposit')"><i class="fas fa-arrow-down"></i> Deposit Engine</a>
+        <a class="nav-item" id="navWithdraw" onclick="switchView('withdraw')"><i class="fas fa-arrow-up"></i> Withdrawal Engine</a>
+        <a class="nav-item" id="navP2p" onclick="switchView('p2p')"><i class="fas fa-exchange-alt"></i> P2P Transfer Radar</a>
+        <a class="nav-item" id="navLockedVaults" onclick="switchView('lockedVaults')"><i class="fas fa-lock"></i> Locked Vaults</a>
+        <a class="nav-item" id="navMembers" onclick="switchView('members')"><i class="fas fa-users"></i> User Management</a>
+        <a class="nav-item" id="navAirdrop" onclick="switchView('airdrop')"><i class="fas fa-parachute-box"></i> Airdrop Engine</a>
+        
+        <a class="nav-item" onclick="loadAdminData(); toggleSidebar();" style="color: var(--primary); margin-top: 20px;"><i class="fas fa-sync-alt"></i> Force Sync</a>
+        <a class="nav-item" id="themeToggleBtn" onclick="toggleTheme()" style="background: rgba(0,0,0,0.1); border: 1px solid var(--glass-border);"><i class="fas fa-moon" id="themeIcon"></i> <span id="themeText">Light Mode</span></a>
+        
+        <div class="notes-box">
+            <h4><i class="fas fa-pen-nib"></i> Global Broadcast <i class="fas fa-paper-plane" id="broadcastBtn" style="cursor:pointer; color:var(--primary);" onclick="saveNotes()" title="Broadcast"></i></h4>
+            <textarea class="notes-area" id="adminNotes" placeholder="Type global announcement here..."></textarea>
+        </div>
+        <a class="nav-item" style="color: var(--error); margin-top: 20px; border-color: rgba(244, 63, 94, 0.2);" onclick="logout()"><i class="fas fa-power-off"></i> Refresh System</a>
+    </div>
+
+    <div class="main-content" id="mainAppContent">
+        <div class="top-bar">
+            <div class="page-title-box"><i class="fas fa-bars-staggered mobile-nav-toggle" onclick="toggleSidebar()"></i><div class="page-title" id="mainTitle">Command Center</div></div>
+            <div class="admin-profile">
+                <div style="display: flex; align-items: center; gap: 10px; margin-right: 15px; background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--glass-border);">
+                    <span style="font-size:0.75rem; font-weight:700; color:var(--text-sub)">AUTO SYNC (30s)</span>
+                    <label class="switch" style="width:40px; height:20px;"><input type="checkbox" id="autoSyncToggle" onchange="toggleAutoSync(this.checked)"><span class="slider" style="before: {width:14px; height:14px;}"></span></label>
+                </div>
+                <div style="text-align: right;">
+                    <h4 style="font-size: 0.95rem; margin:0; font-weight:700;">Super Admin</h4>
+                    <div class="system-clock" id="systemClock">Loading time...</div>
+                </div>
+                <img src="https://ui-avatars.com/api/?name=Admin&background=00f5ff&color=0f172a&bold=true" alt="Admin">
+            </div>
+        </div>
+
+        <div id="dashboardView" class="view-section active">
+            <div class="stats-grid">
+                <div class="stat-card"><i class="fas fa-users bg-icon"></i><div class="stat-title">Members</div><div class="stat-value" id="statMembers" style="color: var(--primary);">0</div></div>
+                <div class="stat-card"><i class="fas fa-coins bg-icon"></i><div class="stat-title">Live Profit Vault</div><div class="stat-value" id="statProfit" style="color: var(--warning);">0.00 ₮</div></div>
+                <div class="stat-card"><i class="fas fa-arrow-down bg-icon"></i><div class="stat-title">Total Deposit</div><div class="stat-value" id="statDeposits" style="color: var(--success);">0 ₮</div></div>
+                <div class="stat-card"><i class="fas fa-arrow-up bg-icon"></i><div class="stat-title">Total Withdraw</div><div class="stat-value" id="statWithdraws" style="color: var(--error);">0 ₮</div></div>
+                <div class="stat-card"><i class="fas fa-parachute-box bg-icon"></i><div class="stat-title">Airdrop Sent</div><div class="stat-value" id="statAirdrop" style="color: var(--primary);">0 ₮</div></div>
+                <div class="stat-card"><i class="fas fa-hourglass-half bg-icon"></i><div class="stat-title">Pending Req</div><div class="stat-value" id="statPending" style="color: var(--accent);">0</div></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 15px;"><i class="fas fa-chart-line" style="color:var(--primary); margin-right:8px;"></i> Transaction Volume Analytics</h3>
+                <div style="width: 100%; height: 280px;">
+                    <canvas id="analyticsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bulk-action-bar" style="background: linear-gradient(90deg, rgba(0, 188, 212, 0.1), transparent); border-color: rgba(0, 188, 212, 0.3); margin-bottom: 25px;">
+                <div class="bulk-text"><i class="fas fa-file-excel" style="color: var(--primary); font-size: 2.2rem;"></i> 
+                    <div>Enterprise Ledger Backup Matrix<div style="font-size: 0.8rem; color: var(--text-sub); font-weight: 500; margin-top:2px;">Download clean Microsoft Excel format reports of system databases.</div></div>
+                </div>
+                <div class="bulk-btns">
+                    <button class="btn-bulk" style="background: var(--success); color: #000;" onclick="exportDatabaseToExcel('members')"><i class="fas fa-download"></i> Export Excel Members List</button>
+                    <button class="btn-bulk" style="background: var(--primary); color: #000;" onclick="exportDatabaseToExcel('transactions')"><i class="fas fa-file-invoice-dollar"></i> Export Excel Transactions</button>
+                </div>
+            </div>
+
+            <div class="bulk-action-bar">
+                <div class="bulk-text"><i class="fas fa-bolt" style="color: var(--warning); font-size: 2rem;"></i> 
+                    <div>Master Bulk Execution<div style="font-size: 0.8rem; color: var(--text-sub); font-weight: 500; margin-top:2px;">Instantly process all pending requests in the system.</div></div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px; width: 100%; max-width: 450px;">
+                    <div class="bulk-btns">
+                        <button class="btn-bulk btn-bulk-approve" onclick="openConfirmModal('bulkStatus', 'approveAllPending')"><i class="fas fa-check-double"></i> Approve All Pending</button>
+                        <button class="btn-bulk btn-bulk-reject" onclick="openConfirmModal('bulkStatus', 'rejectAllPending')"><i class="fas fa-ban"></i> Reject All Pending</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3 style="font-size: 1.2rem; color: var(--text-main); margin-bottom: 20px;"><i class="fas fa-clock" style="color:var(--warning); margin-right:8px;"></i> All Pending Requests</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Date & Time</th><th>Order ID</th><th>User Info</th><th>Type</th><th>Amount</th><th>TxID / Network</th><th style="text-align: right;">Action</th></tr></thead>
+                        <tbody id="requestTable"><tr><td colspan="7"><div class="loader-spinner"></div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="depositView" class="view-section">
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-bottom: 25px;">
+                <div class="stat-card" style="display:flex; justify-content:space-between; align-items:center; padding: 20px 25px;">
+                    <div><div class="stat-title" style="color:var(--success); margin-bottom: 5px;">Deposit Engine Status</div><div style="font-size: 0.85rem; color:var(--text-sub);">Allow users to deposit</div></div>
+                    <label class="switch"><input type="checkbox" id="depositToggle" onchange="toggleSystemFeature('deposit', this.checked)"><span class="slider round"></span></label>
+                </div>
+            </div>
+            <div class="table-container">
+                <h3 style="margin-bottom: 20px; font-size: 1.2rem; color: var(--text-main);"><i class="fas fa-arrow-down" style="color:var(--success); margin-right:8px;"></i> Deposit History</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Date & Time</th><th>Order ID</th><th>User Info</th><th>Amount</th><th>TxID</th><th>Status</th><th style="text-align: right;">Action</th></tr></thead>
+                        <tbody id="depositTable"><tr><td colspan="7"><div class="loader-spinner"></div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="withdrawView" class="view-section">
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-bottom: 25px;">
+                <div class="stat-card" style="display:flex; justify-content:space-between; align-items:center; padding: 20px 25px;">
+                    <div><div class="stat-title" style="color:var(--error); margin-bottom: 5px;">Withdrawal Engine Status</div><div style="font-size: 0.85rem; color:var(--text-sub);">Global Kill Switch</div></div>
+                    <label class="switch"><input type="checkbox" id="withdrawToggle" onchange="toggleSystemFeature('withdraw', this.checked)"><span class="slider round"></span></label>
+                </div>
+            </div>
+
+            <div class="table-container" style="background: rgba(0,0,0,0.1); border-color: rgba(255,255,255,0.05);">
+                <h3 style="margin-bottom: 20px; font-size: 1.1rem; color: var(--text-main);"><i class="fas fa-sliders-h" style="color:var(--primary); margin-right:8px;"></i> Level-Wise Withdrawal Control</h3>
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-bottom: 0;">
+                    <div class="stat-card" style="padding: 15px; text-align: center;"><div style="font-weight:700; margin-bottom:10px; font-size: 0.9rem;">Level 1</div><label class="switch"><input type="checkbox" id="lvl1Wd" onchange="toggleSystemFeature('lvl1_wd', this.checked)"><span class="slider round"></span></label></div>
+                    <div class="stat-card" style="padding: 15px; text-align: center;"><div style="font-weight:700; margin-bottom:10px; font-size: 0.9rem;">Level 2</div><label class="switch"><input type="checkbox" id="lvl2Wd" onchange="toggleSystemFeature('lvl2_wd', this.checked)"><span class="slider round"></span></label></div>
+                    <div class="stat-card" style="padding: 15px; text-align: center;"><div style="font-weight:700; margin-bottom:10px; font-size: 0.9rem;">Level 3</div><label class="switch"><input type="checkbox" id="lvl3Wd" onchange="toggleSystemFeature('lvl3_wd', this.checked)"><span class="slider round"></span></label></div>
+                    <div class="stat-card" style="padding: 15px; text-align: center;"><div style="font-weight:700; margin-bottom:10px; font-size: 0.9rem;">Level 4</div><label class="switch"><input type="checkbox" id="lvl4Wd" onchange="toggleSystemFeature('lvl4_wd', this.checked)"><span class="slider round"></span></label></div>
+                    <div class="stat-card" style="padding: 15px; text-align: center;"><div style="font-weight:700; margin-bottom:10px; font-size: 0.9rem;">Level 5</div><label class="switch"><input type="checkbox" id="lvl5Wd" onchange="toggleSystemFeature('lvl5_wd', this.checked)"><span class="slider round"></span></label></div>
+                    <div class="stat-card" style="padding: 15px; text-align: center;"><div style="font-weight:700; margin-bottom:10px; font-size: 0.9rem;">Level 6</div><label class="switch"><input type="checkbox" id="lvl6Wd" onchange="toggleSystemFeature('lvl6_wd', this.checked)"><span class="slider round"></span></label></div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3 style="margin-bottom: 20px; font-size: 1.2rem; color: var(--text-main);"><i class="fas fa-arrow-up" style="color:var(--error); margin-right:8px;"></i> Withdrawal History</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Date & Time</th><th>Order ID</th><th>User Info</th><th>Amount</th><th>Network</th><th>Status</th><th style="text-align: right;">Action</th></tr></thead>
+                        <tbody id="withdrawTable"><tr><td colspan="7"><div class="loader-spinner"></div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="p2pView" class="view-section">
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-bottom: 25px;">
+                <div class="stat-card" style="display:flex; justify-content:space-between; align-items:center; padding: 20px 25px;">
+                    <div>
+                        <div class="stat-title" style="color:var(--accent); margin-bottom: 5px;">P2P Transfer Status</div>
+                        <div style="font-size: 0.85rem; color:var(--text-sub);">Allow users to send P2P money</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="p2pToggle" onchange="toggleSystemFeature('p2p', this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3 style="margin-bottom: 20px; font-size: 1.2rem; color: var(--text-main);"><i class="fas fa-exchange-alt" style="color:var(--accent); margin-right:8px;"></i> P2P Transfer History</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Date & Time</th><th>Order ID</th><th>Transfer Details (Sender ➡ Receiver)</th><th>Amount</th><th>Status</th></tr></thead>
+                        <tbody id="p2pTable"><tr><td colspan="5"><div class="loader-spinner"></div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="lockedVaultsView" class="view-section">
+            <div class="bulk-action-bar" style="background: linear-gradient(90deg, rgba(192, 38, 211, 0.1), transparent); border-color: rgba(192, 38, 211, 0.3);">
+                <div class="bulk-text"><i class="fas fa-shield-alt" style="color: #c026d3; font-size: 2rem;"></i> 
+                    <div>Vault Master Release<div style="font-size: 0.8rem; color: var(--text-sub); font-weight: 500; margin-top:2px;">Instantly release all locked funds back to users' main balances.</div></div>
+                </div>
+                <button class="btn-bulk" style="background: #c026d3; color: #fff; max-width: 250px;" onclick="openConfirmModal('releaseAllLocked', null)"><i class="fas fa-unlock-alt"></i> Release All Locked</button>
+            </div>
+
+            <div class="table-container">
+                <h3 style="font-size: 1.2rem; color: var(--text-main); margin-bottom: 20px;"><i class="fas fa-lock" style="color:var(--error); margin-right:8px;"></i> Locked Withdrawals Database</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Date & Time</th><th>Order ID</th><th>User Info</th><th>Locked Amount</th><th style="text-align: right;">Action</th></tr></thead>
+                        <tbody id="lockedTable"><tr><td colspan="5"><div class="loader-spinner"></div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="membersView" class="view-section">
+            <div class="vault-control-card">
+                <h3 style="font-size: 1.3rem; color: var(--text-main); margin-bottom: 10px; display:flex; align-items:center; gap:8px;"><i class="fas fa-shield-alt" style="color:var(--success);"></i> Institutional Vault Control</h3>
+                <p style="font-size:0.9rem; color:var(--text-sub); margin-bottom:25px;">Distribute Auto-Intercept Lock targets based on percentages. If users lack funds, it creates <b style="color:var(--error)">Pending Debt</b>.</p>
+                <div class="ad-input-group"><label style="color:var(--success); font-weight:700;"><i class="fas fa-crosshairs"></i> Target Lock Fund (USDT)</label><input type="number" min="0" id="vPoolAmt" class="ad-input" placeholder="e.g. 500" style="margin-bottom:15px; border-color: rgba(16, 185, 129, 0.3);"></div>
+                <div class="level-grid">
+                    <div class="lvl-box"><label style="color:var(--success)">Level 1 (%)</label><input type="number" min="0" max="100" id="vLvl1" placeholder="0"></div>
+                    <div class="lvl-box"><label style="color:var(--success)">Level 2 (%)</label><input type="number" min="0" max="100" id="vLvl2" placeholder="0"></div>
+                    <div class="lvl-box"><label style="color:var(--success)">Level 3 (%)</label><input type="number" min="0" max="100" id="vLvl3" placeholder="0"></div>
+                    <div class="lvl-box"><label style="color:var(--success)">Level 4 (%)</label><input type="number" min="0" max="100" id="vLvl4" placeholder="0"></div>
+                    <div class="lvl-box"><label style="color:var(--success)">Level 5 (%)</label><input type="number" min="0" max="100" id="vLvl5" placeholder="0"></div>
+                    <div class="lvl-box"><label style="color:var(--success)">Level 6 (%)</label><input type="number" min="0" max="100" id="vLvl6" placeholder="0"></div>
+                </div>
+                <button class="ad-btn" id="massLockBtn" style="background:var(--success); color:#000; margin-bottom: 30px;" onclick="openConfirmModal('vaultMassLock', null)"><i class="fas fa-lock"></i> Apply Auto-Lock Rules</button>
+            </div>
+            
+            <div class="vault-control-card" style="border-color: rgba(192, 38, 211, 0.3); background: rgba(192, 38, 211, 0.05); margin-top: 20px;">
+                <h3 style="font-size: 1.3rem; color: #c026d3; margin-bottom: 10px; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-unlock-alt"></i> Mass Vault Release Engine
+                </h3>
+                <p style="font-size:0.9rem; color:var(--text-sub); margin-bottom:20px;">
+                    Unlock all frozen funds for a specific Level, or execute a global release for everyone.
+                </p>
+                
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <select id="massUnlockLvl" class="ad-input" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                        <option value="1">Level 1 Users Only</option>
+                        <option value="2">Level 2 Users Only</option>
+                        <option value="3">Level 3 Users Only</option>
+                        <option value="4">Level 4 Users Only</option>
+                        <option value="5">Level 5 Users Only</option>
+                        <option value="6">Level 6 Users Only</option>
+                    </select>
+                    <button class="ad-btn" style="background:#c026d3; color:#fff; flex: 1; margin-top: 0;" onclick="openConfirmModal('vaultMassUnlock', document.getElementById('massUnlockLvl').value)">
+                        <i class="fas fa-unlock"></i> Unlock Selected Level
+                    </button>
+                </div>
+                
+                <div style="margin-top: 15px; text-align: center;">
+                    <button onclick="openConfirmModal('releaseAllLocked', 'global')" style="background: rgba(244, 63, 94, 0.05); color: var(--error); border: 1px dashed var(--error); padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 700; width: 100%; transition: 0.3s;">
+                        <i class="fas fa-exclamation-triangle"></i> GLOBAL OVERRIDE: Empty All Vaults (System Wide)
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px; flex-wrap:wrap; gap:15px;">
+                    <h3 style="font-size: 1.2rem; color: var(--text-main);"><i class="fas fa-users-cog" style="color:var(--primary); margin-right:8px;"></i> System Citizens Database</h3>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <button onclick="filterLockedMembers()" style="background: rgba(192, 38, 211, 0.1); color: #c026d3; border: 1px solid #c026d3; padding: 10px 15px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: 0.3s;"><i class="fas fa-filter"></i> Locked Vaults</button>
+                        <div class="sb-search" style="margin-bottom:0; padding: 10px 15px; width: 250px;"><i class="fas fa-search"></i><input type="text" id="memberSearchBox" placeholder="Find UID or Name..." oninput="filterMembers()"></div>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>User Profile</th><th>Wallet Assets (USDT)</th><th>Status</th><th style="text-align: right;">Security</th></tr></thead>
+                        <tbody id="memberTable"><tr><td colspan="4"><div class="loader-spinner"></div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="airdropView" class="view-section">
+            <div class="airdrop-grid">
+                <div class="airdrop-card">
+                    <h3><i class="fas fa-gift" style="color:var(--success);"></i> Single User Airdrop</h3>
+                    <p style="font-size:0.85rem; color:var(--text-sub); margin-bottom:20px;">Send a specific amount of USDT directly to a user's main balance.</p>
+                    <div class="ad-input-group"><label>Target User ID (UID)</label><input type="text" id="adSingleUid" class="ad-input" placeholder="e.g. TCM123456"></div>
+                    <div class="ad-input-group"><label>Amount (USDT)</label><input type="number" min="0" id="adSingleAmt" class="ad-input" placeholder="0.00"></div>
+                    <button class="ad-btn" id="singleAirBtn" onclick="openConfirmModal('airdropSingle', null)"><i class="fas fa-paper-plane"></i> Send Bonus</button>
+                </div>
+                <div class="airdrop-card">
+                    <h3><i class="fas fa-rocket" style="color:var(--primary);"></i> Pool Distribution</h3>
+                    <p style="font-size:0.85rem; color:var(--text-sub); margin-bottom:20px;">Distribute a large pool of funds equally among users based on their rank percentage.</p>
+                    <div class="ad-input-group"><label style="color:var(--primary); font-weight:700;">Total Pool Size (USDT)</label><input type="number" min="0" id="adPoolAmt" class="ad-input" placeholder="e.g. 1000"></div>
+                    <div class="level-grid">
+                        <div class="lvl-box"><label>Level 1 (%)</label><input type="number" min="0" max="100" id="adLvl1" placeholder="0"></div>
+                        <div class="lvl-box"><label>Level 2 (%)</label><input type="number" min="0" max="100" id="adLvl2" placeholder="0"></div>
+                        <div class="lvl-box"><label>Level 3 (%)</label><input type="number" min="0" max="100" id="adLvl3" placeholder="0"></div>
+                        <div class="lvl-box"><label>Level 4 (%)</label><input type="number" min="0" max="100" id="adLvl4" placeholder="0"></div>
+                        <div class="lvl-box"><label>Level 5 (%)</label><input type="number" min="0" max="100" id="adLvl5" placeholder="0"></div>
+                        <div class="lvl-box"><label>Level 6 (%)</label><input type="number" min="0" max="100" id="adLvl6" placeholder="0"></div>
+                    </div>
+                    <button class="ad-btn" id="massAirBtn" style="background:var(--accent); color:#fff;" onclick="openConfirmModal('airdropMass', null)"><i class="fas fa-bolt"></i> Execute Distribution</button>
+                </div>
+            </div>
+            <div class="table-container" style="margin-top:25px;">
+                <h3 style="margin-bottom: 20px; font-size: 1.2rem; color: var(--text-main);"><i class="fas fa-list-alt" style="color:var(--primary); margin-right:8px;"></i> Airdrop Distribution Ledger</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Date & Time</th><th>Order ID (Batch)</th><th>User Info</th><th>Amount Sent</th><th>Status</th><th style="text-align: right;">Action</th></tr></thead>
+                        <tbody id="airdropTable"><tr><td colspan="6"><div class="loader-spinner"></div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="custom-modal-overlay" id="customConfirmModal">
+        <div class="custom-modal-box">
+            <i class="fas fa-exclamation-circle modal-icon" id="modalIcon"></i>
+            <h3 class="modal-title" id="modalTitle">Confirm Action</h3>
+            <p class="modal-desc" id="modalDesc">Are you sure?</p>
+            <div class="modal-actions">
+                <button class="btn-modal btn-modal-cancel" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn-modal btn-modal-ok" id="modalOkBtn">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="custom-modal-overlay" id="vaultModal">
+        <div class="custom-modal-box">
+            <i class="fas fa-lock modal-icon" style="color:var(--primary); text-shadow:0 0 25px rgba(0, 245, 255, 0.4);"></i>
+            <h3 class="modal-title">Manual Vault Control</h3>
+            <div class="modal-desc" id="vaultDesc" style="font-family:monospace; color:var(--text-main); font-weight:600; font-size:1.1rem; line-height:1.6;">UID: ...</div>
+            <input type="number" min="0" id="vaultAmount" placeholder="Enter Amount (USDT)" style="width:100%; padding:16px; margin-bottom:25px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:var(--text-main); outline:none; font-size:1.2rem; font-weight:700; text-align:center; letter-spacing:1px;">
+            <div class="modal-actions" style="gap:15px;">
+                <button class="btn-modal" id="vLockBtn" style="background:rgba(244, 63, 94, 0.15); color:var(--error); border:1px solid var(--error);" onclick="executeVaultAction('lock')"><i class="fas fa-lock"></i> Lock Fund</button>
+                <button class="btn-modal" id="vUnlBtn" style="background:rgba(16, 185, 129, 0.15); color:var(--success); border:1px solid var(--success);" onclick="executeVaultAction('unlock')"><i class="fas fa-unlock"></i> Unlock Fund</button>
+            </div>
+            <button class="btn-modal btn-modal-cancel" style="width:100%; margin-top:15px;" onclick="closeVaultModal()">Cancel Setup</button>
+        </div>
+    </div>
+
+    <div id="toast"><i class="fas fa-check-circle"></i> Action Successful!</div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHdGLl4jND30SHOjiig11g-2CsAlyD_VoKD2ZoClQjzqO6p4h_vB22kNmW1bbJMHoo/exec"; 
+        
+        const ADMIN_TOKEN = "TCM@MASTER"; 
+        
+        let pendingActionContext = null; let pendingActionType = null; let pendingRowId = null; 
+        let globalUsersData = []; let currentVaultUid = null; let searchTimeout = null;
+        let analyticsChartInst = null; 
+        let autoSyncInterval = null;
+
+        window.onload = () => { setTimeout(initAdmin, 100); };
+
+        function setBtnLoading(btnElement, isLoading, originalText) {
+            if (!btnElement) return;
+            if (isLoading) { btnElement.dataset.origText = btnElement.innerHTML; btnElement.disabled = true; btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...'; } 
+            else { btnElement.disabled = false; btnElement.innerHTML = originalText || btnElement.dataset.origText; }
+        }
+
+        function formatDateCell(dateStr) {
+            if(!dateStr) return "N/A"; const p = dateStr.split(' ');
+            if(p.length >= 3) return `<div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">${p[0]}</div><div style="color:var(--primary); font-family:monospace; font-size:0.8rem; margin-top:4px;"><i class="far fa-clock"></i> ${p[1]} ${p[2]}</div>`;
+            return `<div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">${dateStr}</div>`;
+        }
+
+        function logout() { location.reload(); }
+        
+        setInterval(() => { const d=new Date(); document.getElementById('systemClock').innerText = d.toLocaleString('en-US',{month:'short',day:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}).replace(',',' |')+" (IST)"; }, 1000);
+
+        function switchView(viewName) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            
+            const views = {
+                'dashboard': { nav: 'navDashboard', title: 'Command Center' },
+                'deposit': { nav: 'navDeposit', title: 'Deposit Engine' },
+                'withdraw': { nav: 'navWithdraw', title: 'Withdrawal Engine' },
+                'p2p': { nav: 'navP2p', title: 'P2P Transfer Radar' },
+                'lockedVaults': { nav: 'navLockedVaults', title: 'Locked Vaults' },
+                'members': { nav: 'navMembers', title: 'User Management' },
+                'airdrop': { nav: 'navAirdrop', title: 'Airdrop Engine' }
+            };
+
+            if (views[viewName]) {
+                document.getElementById(views[viewName].nav).classList.add('active');
+                document.getElementById(viewName + 'View').classList.add('active');
+                document.getElementById('mainTitle').innerText = views[viewName].title;
+            }
+            if (viewName === 'members') renderMembersTable(globalUsersData);
+            if (window.innerWidth <= 992) toggleSidebar();
+        }
+
+        function toggleTheme() { const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', t); localStorage.setItem('tcm_admin_theme', t); updateThemeUI(t); if(analyticsChartInst) initChart(window.chartRawData); }
+        function updateThemeUI(t) { const i = document.getElementById('themeIcon'); const txt = document.getElementById('themeText'); if(i) i.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon'; if(txt) txt.innerText = t === 'dark' ? 'Light Mode' : 'Dark Mode'; }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); const o = document.getElementById('mobileOverlay'); if(o.style.display === 'block') { o.style.opacity = '0'; setTimeout(() => o.style.display = 'none', 300); } else { o.style.display = 'block'; setTimeout(() => o.style.opacity = '1', 10); } }
+        function showToast(msg, isErr=false) { const t = document.getElementById("toast"); t.innerHTML = (isErr?'<i class="fas fa-times-circle" style="color:var(--error)"></i> ':'<i class="fas fa-check-circle" style="color:var(--success)"></i> ') + msg; t.className = isErr ? "show error" : "show"; setTimeout(() => { t.className = t.className.replace("show","").trim(); }, 3500); }
+
+        async function initAdmin() { 
+            const t = localStorage.getItem('tcm_admin_theme') || 'dark'; 
+            document.documentElement.setAttribute('data-theme', t); 
+            updateThemeUI(t); 
+            fetchCurrentNote(); 
+            loadAdminData(); 
+        }
+        async function fetchCurrentNote() { try { const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "getAdminNote", data:{adminPass: ADMIN_TOKEN} }) }); const d = await res.json(); if(d.status === 'success' && d.data.note) document.getElementById('adminNotes').value = d.data.note; } catch(e){} }
+        
+        async function saveNotes() { 
+            const noteText = document.getElementById('adminNotes').value.trim(); const btn = document.getElementById('broadcastBtn');
+            btn.classList.remove('fa-paper-plane'); btn.classList.add('fa-spinner', 'fa-spin');
+            try { const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "saveAdminNote", data: { adminPass: ADMIN_TOKEN, note: noteText } }) }); const d = await res.json(); if(d.status === 'success') showToast(d.message); else showToast("Failed!", true); } catch(e) { showToast("Network error!", true); } finally { btn.classList.remove('fa-spinner', 'fa-spin'); btn.classList.add('fa-paper-plane'); }
+        }
+
+        async function toggleSystemFeature(feature, isEnabled) {
+            try {
+                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "toggleFeature", data: { adminPass: ADMIN_TOKEN, feature: feature, status: (!isEnabled).toString() } }) });
+                const d = await res.json(); if(d.status === 'success') showToast(`${feature.toUpperCase()} is now ${isEnabled ? 'ACTIVE' : 'DISABLED'}`); else showToast("Failed to toggle feature", true);
+            } catch(e) { showToast("Network Error", true); }
+        }
+
+        function initChart(txData) {
+            window.chartRawData = txData;
+            const ctx = document.getElementById('analyticsChart').getContext('2d');
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            
+            const dateMap = {};
+            txData.forEach(tx => {
+                if(tx.status !== 'Approved' && tx.status !== 'Success' && tx.status !== 'Completed') return;
+                const d = (tx.date && typeof tx.date === 'string') ? tx.date : 'N/A';
+                if(!dateMap[d]) dateMap[d] = { dep: 0, wd: 0 };
+                if(tx.type === 'Deposit') dateMap[d].dep += parseFloat(tx.amount)||0;
+                if(tx.type === 'Withdraw') dateMap[d].wd += parseFloat(tx.amount)||0;
+            });
+            
+            const labels = Object.keys(dateMap).slice(-15); 
+            const depData = labels.map(l => dateMap[l].dep);
+            const wdData = labels.map(l => dateMap[l].wd);
+            const displayLabels = labels.map(l => {
+                const parts = l.split(' ');
+                if(parts.length >= 2) return parts.slice(1).join(' ');
+                return l;
+            });
+
+            if(analyticsChartInst) analyticsChartInst.destroy();
+            analyticsChartInst = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: displayLabels,
+                    datasets: [
+                        { label: 'Deposit Volume', data: depData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, borderWidth: 3, pointRadius: 4 },
+                        { label: 'Withdraw Volume', data: wdData, borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.1)', fill: true, tension: 0.4, borderWidth: 3, pointRadius: 4 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: isDark ? '#94a3b8' : '#64748b' } } }, scales: { x: { grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }, ticks: { color: isDark ? '#94a3b8' : '#64748b' } }, y: { grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }, ticks: { color: isDark ? '#94a3b8' : '#64748b' } } } }
+            });
+        }
+
+        async function loadAdminData() {
+            try {
+                const isDashboardActive = document.getElementById('dashboardView').classList.contains('active');
+                if(isDashboardActive && !window.autoSyncInterval) {
+                    document.getElementById('requestTable').innerHTML = '<tr><td colspan="7"><div class="loader-spinner"></div></td></tr>';
+                    document.getElementById('depositTable').innerHTML = '<tr><td colspan="7"><div class="loader-spinner"></div></td></tr>';
+                    document.getElementById('withdrawTable').innerHTML = '<tr><td colspan="7"><div class="loader-spinner"></div></td></tr>';
+                    document.getElementById('p2pTable').innerHTML = '<tr><td colspan="5"><div class="loader-spinner"></div></td></tr>';
+                }
+
+                // 🔥 Added Profit API to the fetch array
+                const [txRes, userRes, sysRes, airRes, profitRes] = await Promise.all([
+                    fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action: 'fetchEnterpriseAdminData', data:{adminPass: ADMIN_TOKEN} }) }).then(r=>r.json()).catch(()=>({})),
+                    fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action: 'getAllUsers', data:{adminPass: ADMIN_TOKEN} }) }).then(r=>r.json()).catch(()=>({})),
+                    fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action: 'getSystemSettings' }) }).then(r=>r.json()).catch(()=>({})),
+                    fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action: 'getAirdropHistory', data:{adminPass: ADMIN_TOKEN} }) }).then(r=>r.json()).catch(()=>({})),
+                    fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action: 'getLiveProfit', data:{adminPass: ADMIN_TOKEN} }) }).then(r=>r.json()).catch(()=>({}))
+                ]);
+
+                if(sysRes.success || sysRes.status === 'success') {
+                    document.getElementById('depositToggle').checked = !sysRes.data.deposit_disabled;
+                    document.getElementById('withdrawToggle').checked = !sysRes.data.withdraw_disabled;
+                    if(document.getElementById('p2pToggle')) document.getElementById('p2pToggle').checked = sysRes.data.p2p_disabled !== 'true' && sysRes.data.p2p_disabled !== true;
+                    for(let i=1; i<=6; i++) {
+                        let toggle = document.getElementById('lvl'+i+'Wd');
+                        if(toggle) toggle.checked = sysRes.data[`lvl${i}_wd_disabled`] !== 'true';
+                    }
+                }
+
+                if(airRes.status === 'success') {
+                    const airTbody = document.getElementById('airdropTable');
+                    airTbody.innerHTML = airRes.data.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--text-sub);">No Airdrop History Found.</td></tr>' : 
+                    airRes.data.map(req => {
+                        let isRev = req.type === 'Reversal'; let typeBadge = isRev ? 'air' : 'dep';
+                        let oIdVal = req.orderId || req.Order_ID || req.order_id || 'N/A';
+                        let rowVal = req.txRowIndex || req.rowIndex || req.row || 0;
+                        let actionBtn = (!isRev && req.status === 'Success') ? `<button class="btn-sm btn-rej" onclick="openConfirmModal('airdropSingleRev', '${req.uid}', {row: ${rowVal}, amt: ${req.amount}})"><i class="fas fa-undo"></i> Reverse</button>` : `<span class="badge ${isRev ? 'air' : 'locked-tx'}">${req.status}</span>`;
+                        return `<tr><td>${formatDateCell(req.date)}</td><td><span class="order-id-tag">${oIdVal}</span></td><td><div style="font-weight:700; color:var(--text-main); font-size:1rem;">${req.name}</div><div style="color:var(--primary); font-family:monospace; font-size:0.8rem;">${req.uid}</div></td><td style="font-weight:800; font-size:1.1rem; color:var(${isRev?'--error':'--success'});">${parseFloat(req.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} ₮</td><td><span class="badge ${typeBadge}">${req.type}</span></td><td style="text-align: right;">${actionBtn}</td></tr>`;
+                    }).join('');
+                }
+
+                if(txRes.status === 'success' && userRes.status === 'success') {
+                    globalUsersData = userRes.data || []; 
+                    window.cachedFullTransactions = txRes.data || []; // Cache for Excel
+                    document.getElementById('statMembers').innerText = globalUsersData.length;
+                    
+                    if(document.getElementById('membersView').classList.contains('active')) {
+                        renderMembersTable(globalUsersData);
+                    }
+                    
+                    let tDep = 0; let tWd = 0; let tAir = 0;
+                    txRes.data.forEach(t => { 
+                        if((t.status==='Success'||t.status==='Approved')) {
+                            if(t.type==='Deposit') tDep += parseFloat(t.amount)||0;
+                            if(t.type==='Withdraw') tWd += parseFloat(t.amount)||0;
+                        }
+                        if(t.status==='Success' && t.type==='Airdrop') tAir += parseFloat(t.amount)||0;
+                    });
+                    document.getElementById('statDeposits').innerText = tDep.toLocaleString('en-US',{minimumFractionDigits:2})+" ₮"; 
+                    document.getElementById('statWithdraws').innerText = tWd.toLocaleString('en-US',{minimumFractionDigits:2})+" ₮"; 
+                    document.getElementById('statAirdrop').innerText = tAir.toLocaleString('en-US',{minimumFractionDigits:2})+" ₮"; 
+                    
+                    // 🔥 Profit is now fetched directly from the Profit Sheet!
+                    let systemTotalProfit = (profitRes && profitRes.status === 'success') ? (parseFloat(profitRes.profit) || 0) : 0;
+                    document.getElementById('statProfit').innerText = systemTotalProfit.toLocaleString('en-US',{minimumFractionDigits:2})+" ₮"; 
+                    
+                    initChart(txRes.data);
+
+                    const pending = txRes.data.filter(t => t.status === 'Pending' && t.type !== 'P2P Transfer'); 
+                    const deposits = txRes.data.filter(t => t.type === 'Deposit' && t.status !== 'Pending');
+                    const withdraws = txRes.data.filter(t => t.type === 'Withdraw' && t.status !== 'Pending' && t.status !== 'Locked');
+                    const lockedTx = txRes.data.filter(t => t.status === 'Locked');
+                    const p2pTx = txRes.data.filter(t => t.source === 'P2P' || t.type === 'P2P Transfer'); 
+                    
+                    document.getElementById('statPending').innerText = pending.length;
+                    
+                    document.getElementById('requestTable').innerHTML = pending.length === 0 ? '<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--text-sub);"><i class="fas fa-check-circle" style="font-size:2.5rem; margin-bottom:15px; display:block; color:var(--success); opacity:0.3;"></i> System Clear! No pending requests.</td></tr>' : 
+                    pending.map(req => {
+                        let oIdVal = req.orderId || req.Order_ID || req.order_id || 'N/A';
+                        let rowVal = req.txRowIndex || req.rowIndex || req.row || 0;
+                        let lockBtn = req.type === 'Withdraw' ? `<button class="btn-sm btn-vault-lock" onclick="openConfirmModal('singleLock', 'lockWithdrawTx', ${rowVal})" title="Lock to Vault"><i class="fas fa-lock"></i> Lock</button>` : '';
+                        let typeBadge = req.type === 'Deposit' ? 'dep' : (req.type === 'Airdrop' || req.type === 'Reversal' ? 'air' : 'wd');
+                        return `<tr><td>${formatDateCell(req.date)}</td><td><span class="order-id-tag">${oIdVal}</span></td><td><div style="font-weight:700; color:var(--text-main); font-size:1rem;">${req.name || 'User'}</div><div style="color:var(--primary); font-family:monospace; font-size:0.8rem;">${req.uid || 'N/A'}</div></td><td><span class="badge ${typeBadge}">${req.type}</span></td><td style="font-weight:800; font-size:1.1rem;">${parseFloat(req.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} ₮</td><td style="font-size:0.85rem; color:var(--text-sub); font-family: monospace;">${req.txid||'N/A'}</td><td style="text-align: right;"><div class="action-btns"><button class="btn-sm btn-app" onclick="openConfirmModal('single', 'approveTx', ${rowVal})" title="Approve"><i class="fas fa-check"></i> Accept</button>${lockBtn}<button class="btn-sm btn-rej" onclick="openConfirmModal('single', 'rejectTx', ${rowVal})" title="Reject"><i class="fas fa-times"></i> Reject</button></div></td></tr>`;
+                    }).join('');
+
+                    document.getElementById('depositTable').innerHTML = deposits.length === 0 ? '<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--text-sub);">No deposit history found.</td></tr>' :
+                    deposits.map(req => {
+                        let oIdVal = req.orderId || req.Order_ID || req.order_id || 'N/A';
+                        let rowVal = req.txRowIndex || req.rowIndex || req.row || 0;
+                        let statusClass = req.status === 'Approved' ? 'active-user' : 'banned-user';
+                        return `<tr><td>${formatDateCell(req.date)}</td><td><span class="order-id-tag">${oIdVal}</span></td><td><div style="font-weight:700; color:var(--text-main); font-size:1rem;">${req.name || 'User'}</div><div style="color:var(--primary); font-family:monospace; font-size:0.8rem;">${req.uid || 'N/A'}</div></td><td style="font-weight:800; font-size:1.1rem; color:var(--success);">${parseFloat(req.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} ₮</td><td style="font-size:0.85rem; color:var(--text-sub); font-family: monospace;">${req.txid||'N/A'}</td><td><span class="badge ${statusClass}">${req.status}</span></td><td style="text-align: right;"><button class="btn-del" onclick="openConfirmModal('archive', 'archiveTx', ${rowVal})" title="Archive"><i class="fas fa-times"></i></button></td></tr>`;
+                    }).join('');
+
+                    document.getElementById('withdrawTable').innerHTML = withdraws.length === 0 ? '<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--text-sub);">No withdrawal history found.</td></tr>' :
+                    withdraws.map(req => {
+                        let oIdVal = req.orderId || req.Order_ID || req.order_id || 'N/A';
+                        let rowVal = req.txRowIndex || req.rowIndex || req.row || 0;
+                        let statusClass = req.status === 'Approved' || req.status === 'Released' ? 'active-user' : (req.status === 'Cancelled' ? 'locked-tx' : 'banned-user');
+                        let reverseBtn = (req.status === 'Rejected') ? `<button class="btn-sm btn-rev" onclick="openConfirmModal('single', 'reverseTx', ${rowVal})" title="Reverse to Pending"><i class="fas fa-undo"></i> Reverse</button>` : '';
+                        return `<tr><td>${formatDateCell(req.date)}</td><td><span class="order-id-tag">${oIdVal}</span></td><td><div style="font-weight:700; color:var(--text-main); font-size:1rem;">${req.name || 'User'}</div><div style="color:var(--primary); font-family:monospace; font-size:0.8rem;">${req.uid || 'N/A'}</div></td><td style="font-weight:800; font-size:1.1rem; color:var(--error);">${parseFloat(req.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} ₮</td><td style="font-size:0.85rem; color:var(--text-sub); font-family: monospace;">${req.txid||'N/A'}</td><td><span class="badge ${statusClass}">${req.status}</span></td><td style="text-align: right;"><div class="action-btns">${reverseBtn}<button class="btn-del" onclick="openConfirmModal('archive', 'archiveTx', ${rowVal})" title="Archive"><i class="fas fa-times"></i></button></div></td></tr>`;
+                    }).join('');
+
+                    document.getElementById('lockedTable').innerHTML = lockedTx.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-sub);"><i class="fas fa-shield-alt" style="font-size:2.5rem; margin-bottom:15px; display:block; opacity:0.3;"></i> Vault is empty. No locked funds.</td></tr>' :
+                    lockedTx.map(req => {
+                        let oIdVal = req.orderId || req.Order_ID || req.order_id || 'N/A';
+                        let rowVal = req.txRowIndex || req.rowIndex || req.row || 0;
+                        return `<tr><td>${formatDateCell(req.date)}</td><td><span class="order-id-tag">${oIdVal}</span></td><td><div style="font-weight:700; color:var(--text-main); font-size:1rem;">${req.name || 'User'}</div><div style="color:var(--primary); font-family:monospace; font-size:0.8rem;">${req.uid || 'N/A'}</div></td><td style="font-weight:800; font-size:1.2rem; color:#c026d3;">${parseFloat(req.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} ₮</td><td style="text-align: right;"><button class="btn-sm" style="background: rgba(192, 38, 211, 0.15); color: #c026d3; border: 1px solid #c026d3;" onclick="openConfirmModal('singleRelease', 'releaseWithdrawTx', ${rowVal})" title="Release Fund"><i class="fas fa-unlock"></i> Release</button></td></tr>`;
+                    }).join('');
+
+                    document.getElementById('p2pTable').innerHTML = p2pTx.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-sub);">No P2P transfers found.</td></tr>' :
+                    p2pTx.map(req => {
+                        let oIdVal = req.orderId || req.Order_ID || req.order_id || 'N/A';
+                        let statusClass = req.status === 'Completed' || req.status === 'Success' ? 'active-user' : 'banned-user';
+                        return `<tr><td>${formatDateCell(req.date)}</td><td><span class="order-id-tag">${oIdVal}</span></td><td><div style="font-weight:700; color:var(--text-main); font-size:1rem;">${req.name || 'User Transfer'}</div><div style="color:var(--primary); font-family:monospace; font-size:0.8rem;">Sender UID: ${req.uid || 'N/A'}</div></td><td style="font-weight:800; font-size:1.1rem; color:var(--accent);">${parseFloat(req.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} ₮</td><td><span class="badge ${statusClass}">${req.status}</span></td></tr>`;
+                    }).join('');
+
+                } else { showToast("Failed to load data", true); }
+            } catch(e) { showToast("Network Error!", true); } 
+        }
+
+        function renderMembersTable(users) {
+            const tbody = document.getElementById('memberTable');
+            if(!users || users.length === 0) return tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px; color: var(--text-sub);">No members found.</td></tr>';
+            
+            tbody.innerHTML = users.map((u, i) => {
+                const avatar = u.profilePic && u.profilePic.length > 50 ? u.profilePic : `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name||'U')}&background=00f5ff&color=0f172a&bold=true`;
+                const isBanned = u.status === 'Banned'; 
+                const sBadge = isBanned ? '<span class="badge banned-user"><i class="fas fa-ban"></i> Banned</span>' : '<span class="badge active-user"><i class="fas fa-check-circle"></i> Active</span>';
+                const banBtn = isBanned ? `<button class="btn-sm btn-unban" onclick="openConfirmModal('unban', '${u.uid}')"><i class="fas fa-unlock"></i> Unban</button>` : `<button class="btn-sm btn-ban" onclick="openConfirmModal('ban', '${u.uid}')"><i class="fas fa-user-slash"></i> Ban</button>`;
+                
+                let debtHtml = u.pendingLock > 0 ? `<br><div class="debt-alert"><i class="fas fa-exclamation-triangle"></i> Pending Debt: ${parseFloat(u.pendingLock).toLocaleString('en-US', {minimumFractionDigits:2})} ₮</div>` : '';
+                const lockedBal = parseFloat(u.lockedBalance) || 0;
+                const vaultColor = lockedBal > 0 ? 'var(--error)' : 'var(--text-sub)';
+                
+                const releaseBtn = lockedBal > 0 ? `<button class="btn-sm" style="background: rgba(192, 38, 211, 0.15); color: #c026d3; border: 1px solid #c026d3;" onclick="releaseVaultDirect('${u.uid}', ${lockedBal})" title="One-Click Release"><i class="fas fa-unlock"></i> Release</button>` : '';
+                
+                return `<tr><td><div class="user-info-box"><img src="${avatar}"><div><div class="user-name">${u.name}</div><div class="user-uid">${u.uid} | Lvl ${u.rank||1}</div></div></div></td><td><div class="wallet-info"><div class="w-bal"><span style="color:var(--success);"><i class="fas fa-wallet"></i> Main: ${parseFloat(u.balance||0).toLocaleString('en-US', {minimumFractionDigits:2})} ₮</span> <span style="color:${vaultColor}; margin-left:10px;"><i class="fas fa-lock"></i> Vault: ${parseFloat(u.lockedBalance||0).toLocaleString('en-US', {minimumFractionDigits:2})} ₮</span></div>${debtHtml}</div></td><td>${sBadge}</td><td style="text-align:right;"><div class="action-btns">${releaseBtn}<button class="btn-sm btn-vault" onclick="openVaultModal('${u.uid}', ${u.balance||0}, ${u.lockedBalance||0})"><i class="fas fa-shield-alt"></i> Access Vault</button>${banBtn}</div></td></tr>`;
+            }).join('');
+        }
+        
+        function filterMembers() { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => { const q = document.getElementById('memberSearchBox').value.toLowerCase(); renderMembersTable(globalUsersData.filter(u => (u.name&&u.name.toLowerCase().includes(q)) || (u.uid&&u.uid.toLowerCase().includes(q)))); }, 300); }
+        function searchUserFromSidebar() { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => { const uid = document.getElementById('sidebarSearch').value.toLowerCase(); const filtered = globalUsersData.filter(u => u.uid && u.uid.toLowerCase().includes(uid)); if (filtered.length > 0) { switchView('members'); renderMembersTable(filtered); } }, 500); }
+        
+        function filterLockedMembers() { renderMembersTable(globalUsersData.filter(u => (parseFloat(u.lockedBalance) || 0) > 0)); }
+        function releaseVaultDirect(uid, amount) { if(confirm("Are you sure you want to release " + amount + " ₮ back to Main Balance?")) { executeAPI("unlockBalance", { uid: uid, amount: amount }); } }
+
+        function toggleAutoSync(isAuto) {
+            if(isAuto) {
+                autoSyncInterval = setInterval(() => { loadAdminData(); }, 30000); 
+                showToast("Real-Time Auto Sync ACTIVATED (30s)");
+            } else {
+                if(autoSyncInterval) { clearInterval(autoSyncInterval); autoSyncInterval = null; }
+                showToast("Auto Sync Deactivated", true);
+            }
+        }
+
+        // 🔥 NEW: Excel HTML-Wrapper Engine (No CSV formatting issues)
+        function exportDatabaseToExcel(targetType) {
+            try {
+                let filename = "TCM_" + targetType.toUpperCase() + "_REPORT_" + new Date().toISOString().slice(0,10) + ".xls";
+                
+                let tableHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        table { border-collapse: collapse; width: 100%; }
+                        th, td { text-align: center; vertical-align: middle; padding: 10px; border: 1px solid #dddddd; }
+                        th { background-color: #0f172a; color: #00f5ff; font-weight: bold; font-size: 14px; height: 40px; }
+                        td { font-size: 13px; mso-number-format:"\\@"; } 
+                    </style>
+                </head>
+                <body>
+                    <table>
+                        <thead><tr>`;
+
+                let headers = [];
+                let rows = [];
+
+                if (targetType === 'members') {
+                    if (!globalUsersData || globalUsersData.length === 0) return showToast("No members data cached yet!", true);
+                    headers = ["User UID", "Full Name", "Main Balance (USDT)", "Vault Balance (USDT)", "Pending Debt", "Level Rank", "Security Status"];
+                    globalUsersData.forEach(u => {
+                        rows.push([u.uid, u.name, parseFloat(u.balance||0).toFixed(2), parseFloat(u.lockedBalance||0).toFixed(2), parseFloat(u.pendingLock||0).toFixed(2), u.rank||1, u.status]);
+                    });
+                } else if (targetType === 'transactions') {
+                    if (!window.cachedFullTransactions || window.cachedFullTransactions.length === 0) return showToast("No transaction archive loaded yet!", true);
+                    headers = ["Date Time", "Order ID", "User UID", "User Name", "Tx Type", "Amount (USDT)", "TxID Hash / Network", "Status"];
+                    window.cachedFullTransactions.forEach(t => {
+                        rows.push([t.date, String(t.orderId || t.Order_ID || ''), String(t.uid || ''), t.name||'', t.type, parseFloat(t.amount||0).toFixed(2), String(t.txid||''), t.status]);
+                    });
+                }
+
+                headers.forEach(h => tableHtml += `<th>${h}</th>`);
+                tableHtml += `</tr></thead><tbody>`;
+
+                rows.forEach(r => {
+                    tableHtml += `<tr>`;
+                    r.forEach(cell => { tableHtml += `<td>${cell}</td>`; });
+                    tableHtml += `</tr>`;
+                });
+
+                tableHtml += `</tbody></table></body></html>`;
+
+                let blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel' });
+                let link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast("Excel Spreadsheet Generated Successfully!");
+            } catch (err) {
+                showToast("Export error: " + err.message, true);
+            }
+        }
+
+        function openVaultModal(uid, bal, locked) { currentVaultUid = uid; document.getElementById('vaultDesc').innerHTML = `UID: <span style="color:var(--primary)">${uid}</span><br><br>Main Available: <span style="color:var(--success)">${parseFloat(bal).toLocaleString('en-US', {minimumFractionDigits:2})} ₮</span><br>Locked Vault: <span style="color:var(--error)">${parseFloat(locked).toLocaleString('en-US', {minimumFractionDigits:2})} ₮</span>`; document.getElementById('vaultAmount').value = ''; const m = document.getElementById('vaultModal'); m.style.display = 'flex'; setTimeout(() => m.classList.add('show'), 10); }
+        function closeVaultModal() { const m = document.getElementById('vaultModal'); m.classList.remove('show'); setTimeout(() => { m.style.display = 'none'; currentVaultUid = null; }, 300); }
+
+        function openConfirmModal(context, actionData, extraData = null) {
+            pendingActionContext = context; pendingActionType = actionData; pendingRowId = extraData; 
+            const m = document.getElementById('customConfirmModal'); const t = document.getElementById('modalTitle'); const d = document.getElementById('modalDesc'); const i = document.getElementById('modalIcon'); const btn = document.getElementById('modalOkBtn');
+            
+            i.className = "fas fa-exclamation-circle modal-icon"; i.style.color = "var(--warning)"; btn.style.background = "var(--primary)"; btn.style.color = "#000"; btn.innerText = "Proceed";
+
+            if (context === 'bulkType') { t.innerText = `Approve All ${actionData}s?`; d.innerHTML = `This will instantly approve all pending ${actionData}s in the system.`; btn.innerText = `Approve All`; }
+            else if (context === 'bulkStatus') { const isApprove = actionData === 'approveAllPending'; i.className = isApprove ? "fas fa-check-double modal-icon" : "fas fa-ban modal-icon"; i.style.color = isApprove ? "var(--success)" : "var(--error)"; btn.style.background = isApprove ? "var(--success)" : "var(--error)"; btn.style.color = isApprove ? "#000" : "#fff"; t.innerText = isApprove ? "Approve All Pending?" : "Reject All Pending?"; d.innerHTML = isApprove ? "Instantly approve all pending transactions." : "Instantly reject all pending transactions and refund amounts to Main Balance."; btn.innerText = isApprove ? "Approve All" : "Reject All"; }
+            else if (context === 'airdropSingleRev') { i.className = "fas fa-undo modal-icon"; i.style.color = "var(--error)"; btn.style.background = "var(--error)"; btn.style.color = "#fff"; t.innerText = "Reverse Airdrop?"; d.innerHTML = `Reverse <b>${extraData.amt} ₮</b> from UID:<br><b>${actionData}</b>?`; btn.innerText = "Reverse Now";}
+            else if (context === 'clearAll') { i.className = "fas fa-trash-alt modal-icon"; i.style.color = "var(--error)"; btn.style.background = "var(--error)"; btn.style.color = "#fff"; t.innerText = "Clear Logs?"; d.innerHTML = "Archive all rejected/cancelled items? This cleans up your dashboard."; btn.innerText = "Clear Now";}
+            else if (context === 'archive') { i.className = "fas fa-times modal-icon"; i.style.color = "var(--error)"; btn.style.background = "var(--error)"; btn.style.color = "#fff"; t.innerText = "Archive Log?"; d.innerHTML = "Remove this record from the admin view?"; btn.innerText = "Archive";}
+            else if (context === 'airdropSingle') { t.innerText = "Send Bonus?"; d.innerHTML = `Send USDT directly to UID:<br><b>${document.getElementById('adSingleUid').value}</b>?`; btn.innerText = "Send Now";}
+            else if (context === 'airdropMass') { i.className = "fas fa-rocket modal-icon"; i.style.color = "var(--primary)"; t.innerText = "Execute Distribution?"; d.innerHTML = "Distribute pool funds to users based on specified percentages?"; btn.innerText = "Distribute";}
+            else if (context === 'airdropRev') { i.className = "fas fa-undo-alt modal-icon"; i.style.color = "var(--error)"; btn.style.background = "var(--error)"; btn.style.color = "#fff"; t.innerText = `Reverse Level ${actionData}?`; d.innerHTML = `Reverse airdrops for Lvl ${actionData}?`; btn.innerText = "Reverse";}
+            else if (context === 'vaultMassLock') { i.className = "fas fa-shield-alt modal-icon"; i.style.color = "var(--success)"; btn.style.background = "var(--success)"; t.innerText = "Apply Lock Rules?"; d.innerHTML = "Lock funds based on percentages? Insufficient balance will create Debt."; btn.innerText = "Execute Lock";}
+            else if (context === 'vaultMassUnlock') { i.className = "fas fa-unlock modal-icon"; i.style.color = "var(--success)"; btn.style.background = "var(--success)"; t.innerText = `Unlock Level ${actionData}?`; d.innerHTML = `Return all locked funds to Main Balance and clear debts for Lvl ${actionData}?`; btn.innerText = "Unlock Vaults";}
+            else if (context === 'singleLock') { i.className = "fas fa-lock modal-icon"; i.style.color = "var(--warning)"; btn.style.background = "var(--warning)"; t.innerText = "Lock Withdrawal?"; d.innerHTML = "Reject withdrawal and send the amount directly to the user's Locked Vault?"; btn.innerText = "Lock Fund";}
+            else if (context === 'releaseAllLocked') { i.className = "fas fa-unlock-alt modal-icon"; i.style.color = "#c026d3"; btn.style.background = "#c026d3"; btn.style.color = "#fff"; t.innerText = "Release All Locked?"; d.innerHTML = "Instantly release all locked funds to users' Main Balances?"; btn.innerText = "Release All";}
+            else if (context === 'singleRelease') { i.className = "fas fa-unlock modal-icon"; i.style.color = "#c026d3"; btn.style.background = "#c026d3"; btn.style.color = "#fff"; t.innerText = "Release Fund?"; d.innerHTML = "Change status to <b>Released</b> and unlock fund from Vault to Main Balance?"; btn.innerText = "Release Now";}
+            else if (context === 'single' || context === 'bulk') { const isApp = actionData === 'approveTx'; const isRev = actionData === 'reverseTx'; if (isRev) { i.className = "fas fa-undo modal-icon"; i.style.color = "var(--accent)"; btn.style.background = "var(--accent)"; btn.style.color = "#fff"; t.innerText = "Reverse?"; d.innerText = "Make this transaction Pending again?"; btn.innerText = "Reverse";} else { i.className = isApp ? "fas fa-check-circle modal-icon" : "fas fa-times-circle modal-icon"; i.style.color = isApp ? "var(--success)" : "var(--error)"; btn.style.background = isApp ? "var(--success)" : "var(--error)"; btn.style.color = isApp ? "#000" : "#fff"; t.innerText = isApp ? "Approve?" : "Reject?"; d.innerText = "Process this request?"; btn.innerText = isApp ? "Approve" : "Reject";} }
+            else if (context === 'ban' || context === 'unban') { const isBan = context === 'ban'; i.className = isBan ? "fas fa-user-slash modal-icon" : "fas fa-unlock modal-icon"; i.style.color = isBan ? "var(--error)" : "var(--success)"; btn.style.background = isBan ? "var(--error)" : "var(--success)"; btn.style.color = isBan ? "#fff" : "#000"; t.innerText = isBan ? "Ban User?" : "Unban User?"; d.innerHTML = `Change security status for UID:<br><b>${actionData}</b>?`; btn.innerText = isBan ? "Ban Now" : "Unban Now"; }
+            m.style.display = 'flex'; setTimeout(() => m.classList.add('show'), 10);
+        }
+        function closeConfirmModal() { const m = document.getElementById('customConfirmModal'); m.classList.remove('show'); setTimeout(() => { m.style.display = 'none'; document.getElementById('modalOkBtn').disabled = false; }, 300); }
+
+        document.getElementById('modalOkBtn').addEventListener('click', function() {
+            const ctx = pendingActionContext; const data = pendingActionType; const extra = pendingRowId; setBtnLoading(this, true);
+            if (ctx === 'bulkType') executeAPI("approveAllBy", { type: data }, this);
+            else if (ctx === 'bulkStatus') executeAPI(data, {}, this);
+            else if (ctx === 'single' || ctx === 'singleLock' || ctx === 'singleRelease') executeAPI(data, { txRowIndex: extra }, this);
+            else if (ctx === 'releaseAllLocked') executeAPI("releaseAllLocked", {}, this);
+            else if (ctx === 'archive') executeAPI("archiveTx", { txRowIndex: extra }, this);
+            else if (ctx === 'clearAll') executeAPI("clearAllArchived", {}, this);
+            else if (ctx === 'airdropSingle') { const uid = document.getElementById('adSingleUid').value; const amt = document.getElementById('adSingleAmt').value; if(uid&&amt) executeAPI("sendAirdrop", { uid, amount: amt }, this); else { showToast("Fill all fields", true); setBtnLoading(this, false); } }
+            else if (ctx === 'airdropMass') { const p = document.getElementById('adPoolAmt').value; const l = { "1":document.getElementById('adLvl1').value||0, "2":document.getElementById('adLvl2').value||0, "3":document.getElementById('adLvl3').value||0, "4":document.getElementById('adLvl4').value||0, "5":document.getElementById('adLvl5').value||0, "6":document.getElementById('adLvl6').value||0 }; if(p) executeAPI("poolAirdrop", { poolAmount: p, percentages: l }, this); else { showToast("Enter Pool Amount", true); setBtnLoading(this, false); } }
+            else if (ctx === 'airdropRev') executeAPI("reverseLevelAirdrop", { level: data }, this); 
+            else if (ctx === 'airdropSingleRev') executeAPI("reverseSingleAirdrop", { uid: data, txRowIndex: extra.row, amount: extra.amt }, this);
+            else if (ctx === 'vaultMassLock') { const p = document.getElementById('vPoolAmt').value; const l = { "1":document.getElementById('vLvl1').value||0, "2":document.getElementById('vLvl2').value||0, "3":document.getElementById('vLvl3').value||0, "4":document.getElementById('vLvl4').value||0, "5":document.getElementById('vLvl5').value||0, "6":document.getElementById('vLvl6').value||0 }; if(p) executeAPI("poolVaultLock", { poolAmount: p, percentages: l }, this); else { showToast("Enter Target Fund", true); setBtnLoading(this, false); } }
+            else if (ctx === 'vaultMassUnlock') executeAPI("massVaultUnlock", { level: data }, this);
+            else if (ctx === 'ban' || ctx === 'unban') executeAPI(ctx === 'ban' ? 'banUser' : 'unbanUser', { uid: data }, this);
+        });
+
+        async function executeVaultAction(actionType) {
+            const amt = parseFloat(document.getElementById('vaultAmount').value); if(!amt || amt <= 0) return showToast("Enter a valid amount!", true);
+            const btn = actionType === 'lock' ? document.getElementById('vLockBtn') : document.getElementById('vUnlBtn'); setBtnLoading(btn, true);
+            await executeAPI(actionType === 'lock' ? 'lockBalance' : 'unlockBalance', { uid: currentVaultUid, amount: amt }, btn, true);
+        }
+
+        async function executeAPI(actionName, payloadData, btnElement = null, isVaultModal = false) {
+            payloadData.adminPass = ADMIN_TOKEN; 
+            try { const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: actionName, data: payloadData }) }); const d = await res.json(); if (btnElement) setBtnLoading(btnElement, false); if (!isVaultModal) closeConfirmModal(); else closeVaultModal(); if(d.status === 'success') { showToast(d.message || "Success"); setTimeout(loadAdminData, 300); if(actionName.includes('Airdrop') || actionName.includes('Vault')) document.querySelectorAll('.ad-input, .lvl-box input').forEach(input => input.value = ''); } else { showToast("Error: " + d.message, true); } } catch(e) { if (btnElement) setBtnLoading(btnElement, false); if (!isVaultModal) closeConfirmModal(); else closeVaultModal(); showToast("Server error!", true); }
+        }
+    </script>
+</body>
+</html>
